@@ -13,6 +13,9 @@ Features
 - PDF Report Download
 - Dark Theme UI
 
+Project Screenshot
+ ![Dashboard](dashboard.png/output_image)
+
 Technologies Used
 
 - Python
@@ -30,3 +33,5 @@ streamlit run app.py
 Author
 
 Vanshika Varshney
+
+[def]: dashboard.png/output_image
