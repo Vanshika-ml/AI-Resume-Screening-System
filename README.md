@@ -14,7 +14,7 @@ Features
 - Dark Theme UI
 
 Project Screenshot
- ![Dashboard](dashboard.png/output_image)
+ ![Dashboard](screenshots/dashboard.png)
 
 Technologies Used
 
