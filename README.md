@@ -13,8 +13,8 @@ Features
 - PDF Report Download
 - Dark Theme UI
 
-Project Screenshot
- ![Dashboard](screenshots/dashboard.png)
+## Project Screenshot
+ ![Dashboard](screenshots/Screenshot%202026-05-30%20202824.pngScreenshot%202026-05-30%20203051.pngScreenshot%202026-05-30%20203119.pngScreenshot%202026-05-30%20203142.png)
 
 Technologies Used
 
@@ -35,3 +35,4 @@ Author
 Vanshika Varshney
 
 [def]: dashboard.png/output_image
+[def2]: screenshots
