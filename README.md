@@ -1,8 +1,8 @@
-AI Resume Screening System
+## AI Resume Screening System
 
 An AI-powered Resume Screening Application built using Python, NLP, and Streamlit.
 
-Features
+## Features
 
 - Resume PDF Upload
 - Skill Extraction
@@ -14,9 +14,21 @@ Features
 - Dark Theme UI
 
 ## Project Screenshot
- ![Dashboard](screenshots/Screenshot%202026-05-30%20202824.pngScreenshot%202026-05-30%20203051.pngScreenshot%202026-05-30%20203119.pngScreenshot%202026-05-30%20203142.png)
+### Dashboard
+![Dashboard](screenshots/dashboard1.png)
 
-Technologies Used
+### Analysis
+![Dashboard](screenshots/dashboard2.png) 
+
+### Ranking
+![Dashboard](screenshots/dashboard3.png)
+
+### PDF Report
+![Dashboard](screenshots/dashboard4.png) 
+
+
+
+## Technologies Used
 
 - Python
 - Streamlit
@@ -25,14 +37,12 @@ Technologies Used
 - Matplotlib
 - ReportLab
 
-Installation
+## Installation
 
 pip install -r requirements.txt
 streamlit run app.py
 
-Author
+## Author
 
 Vanshika Varshney
 
-[def]: dashboard.png/output_image
-[def2]: screenshots
