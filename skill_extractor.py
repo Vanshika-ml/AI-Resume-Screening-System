@@ -1,128 +1,140 @@
 import re
 
-# -----------------------------------
+# -----------------------------------------------------------
 # Skill Database
-# -----------------------------------
+# -----------------------------------------------------------
+# Key   = canonical skill name (what gets shown/reported)
+# Value = list of aliases/variations that should also match
+#
+# Add more skills here anytime — just add a new key with its
+# common spelling variations as aliases.
+# -----------------------------------------------------------
 
-SKILLS = {
+SKILL_DB = {
+    # Programming Languages
+    "python": ["python", "python3"],
+    "java": ["java"],
+    "c++": ["c\\+\\+", "cpp"],
+    "c": ["\\bc\\b"],
+    "javascript": ["javascript", "js\\b"],
+    "typescript": ["typescript", "ts\\b"],
+    "sql": ["sql"],
+    "r": ["\\br\\b(?!\\w)"],
+    "php": ["php"],
+    "go": ["golang", "\\bgo\\b"],
+    "kotlin": ["kotlin"],
+    "swift": ["swift"],
+    "scala": ["scala"],
 
-    # Programming
-    "python","java","c","c++","c#","javascript","typescript",
-    "r","matlab","php","go","ruby","swift","kotlin",
+    # Data Science / ML / AI
+    "machine learning": ["machine learning", "\\bml\\b"],
+    "deep learning": ["deep learning", "\\bdl\\b"],
+    "natural language processing": ["natural language processing", "\\bnlp\\b"],
+    "computer vision": ["computer vision", "\\bcv\\b"],
+    "data analysis": ["data analysis", "data analytics"],
+    "data science": ["data science"],
+    "statistics": ["statistics", "statistical analysis"],
+    "tensorflow": ["tensorflow"],
+    "pytorch": ["pytorch", "torch"],
+    "keras": ["keras"],
+    "scikit-learn": ["scikit-learn", "scikit learn", "sklearn"],
+    "pandas": ["pandas"],
+    "numpy": ["numpy"],
+    "matplotlib": ["matplotlib"],
+    "seaborn": ["seaborn"],
+    "opencv": ["opencv", "cv2"],
+    "xgboost": ["xgboost"],
+    "hugging face": ["hugging face", "huggingface", "transformers"],
+    "llm": ["large language model", "\\bllm\\b", "llms"],
+    "generative ai": ["generative ai", "genai", "gen ai"],
 
-    # Data Science
-    "numpy","pandas","matplotlib","seaborn","plotly",
-    "scipy","statsmodels","scikit-learn","sklearn",
+    # Web Development
+    "html": ["html", "html5"],
+    "css": ["css", "css3"],
+    "react": ["react\\.js", "reactjs", "\\breact\\b"],
+    "node.js": ["node\\.js", "nodejs", "\\bnode\\b"],
+    "express.js": ["express\\.js", "expressjs", "\\bexpress\\b"],
+    "django": ["django"],
+    "flask": ["flask"],
+    "streamlit": ["streamlit"],
+    "fastapi": ["fastapi"],
+    "next.js": ["next\\.js", "nextjs"],
+    "angular": ["angular"],
+    "vue": ["vue\\.js", "vuejs", "\\bvue\\b"],
+    "rest api": ["rest api", "restful api", "rest apis"],
 
-    # Machine Learning
-    "machine learning",
-    "deep learning",
-    "supervised learning",
-    "unsupervised learning",
-    "reinforcement learning",
-    "feature engineering",
-    "feature selection",
-    "model deployment",
-    "cross validation",
-    "gridsearchcv",
-    "random forest",
-    "decision tree",
-    "xgboost",
-    "lightgbm",
-    "catboost",
-    "svm",
-    "knn",
-    "naive bayes",
-    "logistic regression",
-    "linear regression",
+    # Databases
+    "mysql": ["mysql"],
+    "postgresql": ["postgresql", "postgres"],
+    "mongodb": ["mongodb", "mongo"],
+    "sqlite": ["sqlite"],
+    "firebase": ["firebase"],
+    "redis": ["redis"],
+    "oracle": ["oracle db", "oracle database"],
 
-    # AI
-    "artificial intelligence",
-    "generative ai",
-    "llm",
-    "gpt",
-    "gemini",
-    "langchain",
-    "rag",
-    "huggingface",
-    "transformers",
+    # Cloud / DevOps
+    "aws": ["amazon web services", "\\baws\\b"],
+    "azure": ["microsoft azure", "\\bazure\\b"],
+    "gcp": ["google cloud platform", "\\bgcp\\b", "google cloud"],
+    "docker": ["docker"],
+    "kubernetes": ["kubernetes", "\\bk8s\\b"],
+    "git": ["\\bgit\\b"],
+    "github": ["github"],
+    "ci/cd": ["ci/cd", "ci cd", "continuous integration"],
+    "linux": ["linux"],
 
-    # NLP
-    "nlp",
-    "text mining",
-    "sentiment analysis",
-    "tokenization",
-    "bert",
+    # BI / Visualization Tools
+    "power bi": ["power bi", "powerbi"],
+    "tableau": ["tableau"],
+    "excel": ["excel", "ms excel"],
+    "google sheets": ["google sheets"],
 
-    # Computer Vision
-    "opencv",
-    "cnn",
-    "image processing",
-    "object detection",
-    "yolo",
-
-    # Frameworks
-    "tensorflow",
-    "keras",
-    "pytorch",
-
-    # Database
-    "sql",
-    "mysql",
-    "postgresql",
-    "mongodb",
-    "sqlite",
-
-    # Visualization
-    "power bi",
-    "tableau",
-    "excel",
-
-    # Cloud
-    "aws",
-    "azure",
-    "gcp",
-    "docker",
-    "kubernetes",
-
-    # Deployment
-    "streamlit",
-    "flask",
-    "fastapi",
-    "django",
-
-    # Tools
-    "git",
-    "github",
-    "linux",
-    "jira",
-
-    # Soft Skills
-    "communication",
-    "leadership",
-    "problem solving",
-    "teamwork",
-    "critical thinking",
-    "presentation"
+    # Software Engineering / Other
+    "data structures": ["data structures"],
+    "algorithms": ["algorithms"],
+    "object oriented programming": ["object oriented programming", "\\boop\\b"],
+    "agile": ["agile", "scrum"],
+    "api development": ["api development"],
+    "testing": ["unit testing", "test automation"],
+    "communication": ["communication skills"],
+    "leadership": ["leadership"],
+    "problem solving": ["problem solving", "problem-solving"],
 }
 
 
-# -----------------------------------
-# Extract Skills
-# -----------------------------------
-
 def extract_skills(text):
+    """
+    Extract canonical skill names found in the given text.
 
-    text = text.lower()
+    Uses word-boundary aware regex matching so short/common tokens
+    (like 'r', 'go', 'c') don't false-positive match inside other
+    words (e.g. 'r' inside 'director'), and so multi-word skills and
+    common aliases/abbreviations are all recognized under one
+    canonical name.
+    """
+    if not text:
+        return []
 
+    text_lower = text.lower()
     found = []
 
-    for skill in SKILLS:
+    for canonical_name, patterns in SKILL_DB.items():
+        for pattern in patterns:
+            # Wrap simple alphanumeric patterns with word boundaries;
+            # patterns that already define their own boundaries
+            # (contain \b or lookaheads) are used as-is.
+            if "\\b" in pattern or "(?!" in pattern:
+                regex = pattern
+            else:
+                regex = r"\b" + pattern + r"\b"
 
-        pattern = r"\b" + re.escape(skill) + r"\b"
+            if re.search(regex, text_lower):
+                found.append(canonical_name)
+                break  # no need to check other aliases for this skill
 
-        if re.search(pattern, text):
+    return sorted(set(found))
 
-            found.append(skill.title())
 
-    return sorted(list(set(found)))
+def get_skill_categories():
+    """Optional helper: returns the skill database for reference/UI use."""
+    return SKILL_DB
