@@ -1,602 +1,860 @@
 import streamlit as st
+import pandas as pd
 import matplotlib.pyplot as plt
+import google.generativeai as genai
 from reportlab.pdfgen import canvas
-from resume_parser import extract_text,extract_details,extract_sections
+
+from resume_parser import (
+    extract_text,
+    extract_details,
+    extract_sections
+)
+
 from skill_extractor import extract_skills
 from ranking import calculate_score
-import google.generativeai as genai
 
-genai.configure(api_key="GEMINI_API_KEY")
+# -------------------------------
+# Page Configuration
+# -------------------------------
 
-model = genai.GenerativeModel("gemini-2.5-flash")
+st.set_page_config(
+    page_title="AI Resume Screening System",
+    page_icon="📄",
+    layout="wide"
+)
 
+# -------------------------------
+# Gemini API
+# -------------------------------
 
-st.title("AI Resume Screening System")
-st.caption(
-    "AI Powered ATS Resume Screening & Candidate Ranking System"
+genai.configure(
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
+
+model = genai.GenerativeModel(
+    "gemini-2.5-flash"
+)
+
+# -------------------------------
+# Header
+# -------------------------------
+
+st.title("🤖 AI Resume Screening System")
+
+st.markdown(
+"""
+Professional ATS Resume Screening
+with Candidate Ranking & AI Feedback
+"""
 )
 
 st.divider()
 
-col1, col2, col3 = st.columns(3)
+# -------------------------------
+# Dashboard
+# -------------------------------
 
-col1.metric(
+c1, c2, c3 = st.columns(3)
+
+c1.metric(
     "AI Model",
-    "ATS Scanner"
+    "Gemini"
 )
 
-col2.metric(
+c2.metric(
     "Supported",
     "PDF"
 )
 
-col3.metric(
+c3.metric(
     "Version",
-    "2.0"
+    "3.0"
 )
 
-jd = st.text_area("Paste Job Description")
+st.divider()
 
-resumes = st.file_uploader(
-    "Upload Resumes",
+# -------------------------------
+# Job Description
+# -------------------------------
+
+jd = st.text_area(
+    "📋 Paste Job Description",
+    height=220
+)
+
+# -------------------------------
+# Resume Upload
+# -------------------------------
+
+uploaded_files = st.file_uploader(
+    "📄 Upload Resume(s)",
     type=["pdf"],
     accept_multiple_files=True
 )
 
-if resumes and jd:
+# -------------------------------
+# Start Screening
+# -------------------------------
+
+if uploaded_files and jd:
+
     ranking_data = []
 
-    for resume in resumes:
+    for resume in uploaded_files:
 
-      resume_text = extract_text(resume)
-      details = extract_details(resume_text)
-      sections = extract_sections(
-         resume_text
-      )
+        resume_text = extract_text(resume)
 
-      score = calculate_score(
-        resume_text,
-        jd
-      )
+        details = extract_details(
+            resume_text
+        )
 
-      ranking_data.append({
-        "Resume": resume.name,
-        "Score": score
-      })
+        sections = extract_sections(
+            resume_text
+        )
+
+        skills = extract_skills(
+            resume_text
+        )
+
+        score = calculate_score(
+            resume_text,
+            jd
+        )
+
+        ranking_data.append({
+
+            "Resume": resume.name,
+
+            "Score": score,
+
+            "Skills": skills,
+
+            "Details": details,
+
+            "Sections": sections,
+
+            "Text": resume_text
+
+        })
 
     ranking_data = sorted(
-      ranking_data,
-      key=lambda x: x["Score"],
-      reverse=True
+        ranking_data,
+        key=lambda x: x["Score"],
+        reverse=True
     )
 
-    st.subheader("Candidate Ranking")
-    best_candidate = ranking_data[0]
+    st.subheader("🏆 Candidate Ranking")
+
+    ranking_df = pd.DataFrame([
+        {
+            "Resume": x["Resume"],
+            "Score": x["Score"]
+        }
+        for x in ranking_data
+    ])
+
+    st.dataframe(
+        ranking_df,
+        use_container_width=True
+    )
+
+    best = ranking_data[0]
 
     st.success(
-        f"🏆 Best Candidate: {best_candidate['Resume']}"
+        f"Best Candidate : {best['Resume']}"
     )
 
     st.metric(
-       "Highest ATS Score",
-       f"{best_candidate['Score']}%"
-    )
-
-    st.subheader("Resume Strength")
-
-    if score >= 90:
-        st.success("🟢 Excellent Resume")
-
-    elif score >= 75:
-        st.success("🟡 Strong Resume")
-
-    elif score >= 60:
-        st.warning("🟠 Average Resume")
-
-    else:
-        st.error("🔴 Needs Improvement")
-    st.table(ranking_data)
-    import pandas as pd
-
-    ranking_df = pd.DataFrame(ranking_data)
-
-    st.subheader(
-       "Candidate Ranking Chart"
+        "Highest ATS Score",
+        f"{best['Score']}%"
     )
 
     st.bar_chart(
         ranking_df.set_index("Resume")
     )
 
-    st.subheader(
-       "ATS Score Distribution"
-    )
+    st.divider()
 
-    fig, ax = plt.subplots()
+    resume_text = best["Text"]
 
-    ax.hist(
-       ranking_df["Score"],
-       bins=10
-    )
+    details = best["Details"]
 
-    st.pyplot(fig)
-    col1, col2 = st.columns(2)
+    sections = best["Sections"]
 
-    col1.metric(
-       "Average ATS Score",
-       f"{ranking_df['Score'].mean():.2f}%"
-    )
+    skills = best["Skills"]
 
-    col2.metric(
-       "Total Candidates",
-        len(ranking_df)
-    )
+    score = best["Score"]
 
-    st.subheader(
-      "Top 5 Candidates"
-    )
+# -------------------------------
+# Candidate Information
+# -------------------------------
 
-    top5 = ranking_df.sort_values(
-       by="Score",
-       ascending=False
-    ).head(5)
-
-    st.dataframe(top5)
-
-    resume_text = extract_text(resume)
-
-    score = calculate_score(
-        resume_text,
-        jd
-    )
-
-    skills = extract_skills(
-        resume_text
-    )
-    st.subheader("Candidate Information")
-    st.subheader(
-        "Resume Summary"
-    )
+    st.subheader("👤 Candidate Information")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
-        st.write(
-          "🎓 Education"
-        )
+       st.write("📧 Email")
+       st.info(details["Email"])
 
-        st.write(
-          sections["Education"]
-        )
-
-        st.write(
-           "💼 Experience"
-        )
-
-        st.write(
-           sections["Experience"]
-        )
+       st.write("📞 Phone")
+       st.info(details["Phone"])
 
     with col2:
 
-        st.write(
-         "🏆 Certifications"
-        )
+       st.write("💻 GitHub")
+       st.info(details["GitHub"])
 
-        st.write(
-           sections["Certifications"]
-        )
+       st.write("🔗 LinkedIn")
+       st.info(details["LinkedIn"])
 
-        st.write(
-          "📂 Projects"
-        )
 
-        st.write(
-          sections["Projects"]
-        )
+# -------------------------------
+# Resume Summary
+# -------------------------------
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-       st.write("📧 Email:", details["Email"])
-       st.write("📞 Phone:", details["Phone"])
-
-    with col2:
-       st.write("💻 GitHub:", details["GitHub"])
-       st.write("🔗 LinkedIn:", details["LinkedIn"])
-    
-    st.subheader("Analysis")
-    st.subheader("Resume Statistics")
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric(
-      "Skills",
-      len(skills)
-    )
-
-    col2.metric(
-       "Missing Skills",
-        len(missing_skills)
-    )
-
-    col3.metric(
-       "Projects",
-        len(sections["Projects"])
-    )
-    
-    completion = (
-       (
-            len(skills)
-            + len(sections["Projects"])
-            + len(sections["Education"])
-            + len(sections["Experience"])
-        )
-        * 10
-    )
-
-    completion = min(completion, 100)
-
-    st.subheader("Resume Completion")
-
-    st.progress(completion / 100)
-
-    st.write(f"{completion}% Complete")
-    st.subheader("ATS Score Breakdown")
-
-    skills_score = min(len(skills) * 10, 40)
-
-    education_score = min(
-       len(sections["Education"]) * 15,
-       20
-    )
-
-    experience_score = min(
-      len(sections["Experience"]) * 10,
-      20
-    )
-
-    project_score = min(
-       len(sections["Projects"]) * 5,
-      20
-    )
+    st.subheader("📄 Resume Summary")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
-        st.metric(
-          "Skills",
-          f"{skills_score}/40"
-        )
+        st.write("🎓 Education")
 
-        st.metric(
-          "Education",
-          f"{education_score}/20"
-        )
+        if sections["Education"]:
+           for item in sections["Education"]:
+                st.success(item)
+        else:
+            st.warning("Not Found")
+
+        st.write("💼 Experience")
+
+        if sections["Experience"]:
+            for item in sections["Experience"]:
+              st.success(item)
+        else:
+            st.warning("Not Found")
+
 
     with col2:
 
-        st.metric(
-            "Experience",
-           f"{experience_score}/20"
-        )
+        st.write("📂 Projects")
 
-        st.metric(
-          "Projects",
-          f"{project_score}/20"
-        )
-    st.progress(score / 100)
+        if sections["Projects"]:
+            for item in sections["Projects"]:
+              st.success(item)
+        else:
+            st.warning("Not Found")
 
-    st.subheader("Resume Strength")
+        st.write("🏆 Certifications")
 
-    if score >= 90:
+        if sections["Certifications"]:
+            for item in sections["Certifications"]:
+                st.success(item)
+        else:
+            st.warning("Not Found")
 
-        st.success(
-          "★★★★★ Excellent Resume"
-        )
 
-    elif score >= 75:
+st.divider()
 
-        st.success(
-          "★★★★ Strong Resume"
-        )
+# -------------------------------
+# Resume Statistics
+# -------------------------------
 
-    elif score >= 60:
+jd_skills = extract_skills(jd)
 
-        st.warning(
-         "★★★ Average Resume"
-        )
+missing_skills = []
 
-    else:
+for skill in jd_skills:
 
-        st.error(
-          "★★ Needs Improvement"
-        )
-    
-    st.subheader("AI Suggestions")
-    if st.button("Generate AI Resume Feedback"):
+    if skill not in skills:
 
-        prompt = f"""
-        Analyze this resume.
+        missing_skills.append(skill)
 
-        Resume:
-        {resume_text}
 
-        Job Description:
-        {jd}
+st.subheader("📊 Resume Statistics")
 
-        Give:
+c1, c2, c3 = st.columns(3)
 
-        1. ATS improvement suggestions
-        2. Missing skills
-        3. Resume strengths
-        4. Resume weaknesses
-        5. Final recommendation
+c1.metric(
+    "Skills",
+    len(skills)
+)
 
-        Keep the answer concise.
-        """
+c2.metric(
+    "Missing Skills",
+    len(missing_skills)
+)
 
-        response = model.generate_content(prompt)
+c3.metric(
+    "Projects",
+    len(sections["Projects"])
+)
 
-        st.subheader("🤖 AI Resume Feedback")
+completion = (
+    len(skills)
+    + len(sections["Projects"])
+    + len(sections["Education"])
+    + len(sections["Experience"])
+) * 10
 
-        st.write(response.text)
- 
-    suggestions = []
+completion = min(completion, 100)
 
-    if len(missing_skills):
+st.subheader("✅ Resume Completion")
 
-        suggestions.append(
-           "Add missing technical skills."
-        )
+st.progress(completion / 100)
 
-    if len(sections["Projects"]) < 2:
+st.write(f"{completion}% Complete")
 
-        suggestions.append(
-           "Include more Machine Learning projects."
-        )
 
-    if details["GitHub"] == "Not Found":
+st.divider()
 
-        suggestions.append(
-          "Add GitHub profile."
-        )
+# -------------------------------
+# ATS Breakdown
+# -------------------------------
 
-    if details["LinkedIn"] == "Not Found":
+st.subheader("📈 ATS Score Breakdown")
 
-        suggestions.append(
-          "Add LinkedIn profile."
-        )
+skills_score = min(len(skills) * 10, 40)
 
-    if len(sections["Certifications"]) == 0:
+education_score = min(
+    len(sections["Education"]) * 15,
+    20
+)
 
-        suggestions.append(
-          "Mention certifications."
-        )
+experience_score = min(
+    len(sections["Experience"]) * 10,
+    20
+)
 
-    for item in suggestions:
+project_score = min(
+    len(sections["Projects"]) * 5,
+    20
+)
 
-        st.info(item)
-        st.subheader("ATS Score")
+c1, c2 = st.columns(2)
 
-        st.metric(
-           label="ATS Match Score",
-           value=f"{score}%"
-        )
-
-    st.progress(score / 100)
-
-    st.write(
-        "Detected Skills:"
-    )
-
-    st.subheader("Detected Skills")
-
-    for skill in skills:
-        st.success(f"✅ {skill.title()}")
-
-    if score > 75:
-        st.success(
-            "Highly Recommended"
-        )
-    elif score > 50:
-        st.warning(
-            "Recommended"
-        )
-    else:
-        st.error(
-            "Not Recommended"
-        )
-
+with c1:
 
     st.metric(
-      label="Match Score",
-      value=f"{score}%"
+        "Skills",
+        f"{skills_score}/40"
     )
 
-    st.success(f"Skills Found: {len(skills)}")
-    for skill in skills:
-        st.write("✅", skill.title())
-    jd_skills = extract_skills(jd)
+    st.metric(
+        "Education",
+        f"{education_score}/20"
+    )
 
-    missing_skills = []
+with c2:
 
-    for skill in jd_skills:
-        if skill not in skills:
-           missing_skills.append(skill)
+    st.metric(
+        "Experience",
+        f"{experience_score}/20"
+    )
 
-    st.subheader("Resume Feedback")
+    st.metric(
+        "Projects",
+        f"{project_score}/20"
+    )
 
-    if missing_skills:
-        st.subheader("Missing Skills")
 
-        if missing_skills:
-            for skill in missing_skills:
-              st.error(f"❌ {skill.title()}")
-        else:
-            st.success("No Missing Skills Found")
-    else:
-       st.success(
-         "Resume matches all required skills!"
-        )        
-    st.subheader("Skills Distribution")
+st.progress(score / 100)
 
-    fig, ax = plt.subplots()
+st.metric(
+    "ATS Match Score",
+    f"{score}%"
+)
+
+st.divider()
+
+# -------------------------------
+# Resume Strength
+# -------------------------------
+
+st.subheader("💪 Resume Strength")
+
+if score >= 90:
+
+    st.success("★★★★★ Excellent Resume")
+
+elif score >= 75:
+
+    st.success("★★★★ Strong Resume")
+
+elif score >= 60:
+
+    st.warning("★★★ Average Resume")
+
+else:
+
+    st.error("★★ Needs Improvement")    
+
+# ------------------------------------------
+# AI Resume Feedback (Gemini)
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("🤖 AI Resume Feedback")
+
+prompt = f"""
+You are an ATS Resume Expert.
+
+Job Description:
+{jd}
+
+Resume:
+{resume_text}
+
+Return your answer in the following format:
+
+Overall ATS Score:
+/100
+
+Strengths:
+- ...
+
+Weaknesses:
+- ...
+
+Missing Skills:
+- ...
+
+Resume Improvements:
+- ...
+
+Recruiter Decision:
+- Shortlist / Reject
+
+Interview Questions:
+1.
+2.
+3.
+4.
+5.
+"""
+
+try:
+
+    response = model.generate_content(prompt)
+
+    feedback = response.text
+
+    st.write(feedback)
+
+except Exception as e:
+
+    st.error(e)
+
+
+# ------------------------------------------
+# Missing Skills
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("❌ Missing Skills")
+
+if len(missing_skills) == 0:
+
+    st.success(
+        "Excellent! No missing skills found."
+    )
+
+else:
+
+    for skill in missing_skills:
+
+        st.warning(f"• {skill}")
+
+
+# ------------------------------------------
+# Resume Suggestions
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("💡 Resume Suggestions")
+
+suggestions = []
+
+if len(sections["Projects"]) < 2:
+
+    suggestions.append(
+        "Add more Machine Learning projects."
+    )
+
+if len(sections["Experience"]) == 0:
+
+    suggestions.append(
+        "Add internship or work experience."
+    )
+
+if len(missing_skills) > 0:
+
+    suggestions.append(
+        "Add missing skills mentioned above."
+    )
+
+if len(sections["Certifications"]) == 0:
+
+    suggestions.append(
+        "Add relevant certifications."
+    )
+
+if len(suggestions) == 0:
+
+    st.success(
+        "Your resume looks strong."
+    )
+
+else:
+
+    for s in suggestions:
+
+        st.info(s)
+
+
+# ------------------------------------------
+# Skills
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("🛠 Skills Detected")
+
+for skill in skills:
+
+    st.success(skill)
+
+
+# ------------------------------------------
+# Skill Distribution Chart
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("📊 Skill Distribution")
+
+if len(skills) > 0:
+
+    fig, ax = plt.subplots(figsize=(6,6))
 
     ax.pie(
-      [1] * len(skills),
-      labels=skills,
-      autopct="%1.1f%%"
+        [1]*len(skills),
+        labels=skills,
+        autopct="%1.1f%%"
     )
 
     st.pyplot(fig)
-    st.subheader("Recruiter Decision")
 
-    if score >= 85:
 
-        st.success(
-          "🎉 Shortlist Candidate"
-        )
+# ------------------------------------------
+# Recruiter Decision
+# ------------------------------------------
 
-    elif score >= 70:
+st.divider()
 
-        st.warning(
-          "📞 Keep for Interview"
-        )
+st.subheader("👨‍💼 Recruiter Decision")
 
-    else:
+if score >= 85:
 
-        st.error(
-          "❌ Reject"
-        )
-
-    st.subheader(
-       "Suggested Interview Questions"
+    st.success(
+        "✅ Highly Recommended"
     )
 
-    questions = []
+elif score >= 70:
 
-    if "python" in [s.lower() for s in skills]:
-        questions.append(
-         "Explain Python decorators."
+    st.warning(
+        "🟡 Recommended"
+    )
+
+else:
+
+    st.error(
+        "❌ Not Recommended"
+    )
+
+
+# ------------------------------------------
+# AI Interview Questions
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("🎯 AI Interview Questions")
+
+question_prompt = f"""
+Generate 10 interview questions for this candidate.
+
+Resume:
+
+{resume_text}
+
+Job Description:
+
+{jd}
+"""
+
+try:
+
+    questions = model.generate_content(
+        question_prompt
+    )
+
+    st.write(
+        questions.text
+    )
+
+except Exception as e:
+
+    st.error(e)    
+# ------------------------------------------
+# PDF Report Generation
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("📄 Generate PDF Report")
+
+pdf_file = "Resume_Report.pdf"
+
+c = canvas.Canvas(pdf_file)
+
+y = 800
+
+c.setFont("Helvetica-Bold",16)
+c.drawString(50,y,"AI Resume Screening Report")
+
+y -= 40
+
+c.setFont("Helvetica",12)
+
+c.drawString(50,y,f"Candidate : {best['Resume']}")
+
+y -= 25
+
+c.drawString(50,y,f"ATS Score : {score}%")
+
+y -= 25
+
+c.drawString(50,y,f"Skills Found : {len(skills)}")
+
+y -= 25
+
+c.drawString(50,y,f"Missing Skills : {len(missing_skills)}")
+
+y -= 40
+
+c.setFont("Helvetica-Bold",13)
+
+c.drawString(50,y,"Candidate Details")
+
+y -= 25
+
+c.setFont("Helvetica",12)
+
+c.drawString(50,y,f"Email : {details['Email']}")
+
+y -= 20
+
+c.drawString(50,y,f"Phone : {details['Phone']}")
+
+y -= 20
+
+c.drawString(50,y,f"GitHub : {details['GitHub']}")
+
+y -= 20
+
+c.drawString(50,y,f"LinkedIn : {details['LinkedIn']}")
+
+y -= 35
+
+c.setFont("Helvetica-Bold",13)
+
+c.drawString(50,y,"Resume Statistics")
+
+y -= 25
+
+c.setFont("Helvetica",12)
+
+c.drawString(
+    50,
+    y,
+    f"Education : {len(sections['Education'])}"
+)
+
+y -= 20
+
+c.drawString(
+    50,
+    y,
+    f"Experience : {len(sections['Experience'])}"
+)
+
+y -= 20
+
+c.drawString(
+    50,
+    y,
+    f"Projects : {len(sections['Projects'])}"
+)
+
+y -= 20
+
+c.drawString(
+    50,
+    y,
+    f"Certifications : {len(sections['Certifications'])}"
+)
+
+y -= 35
+
+c.setFont("Helvetica-Bold",13)
+
+c.drawString(50,y,"Missing Skills")
+
+y -= 25
+
+c.setFont("Helvetica",11)
+
+if len(missing_skills)==0:
+
+    c.drawString(
+        70,
+        y,
+        "No Missing Skills"
+    )
+
+    y -= 20
+
+else:
+
+    for skill in missing_skills:
+
+        c.drawString(
+            70,
+            y,
+            f"- {skill}"
         )
 
-    if "machine learning" in [s.lower() for s in skills]:
-        questions.append(
-           "Difference between Bagging and Boosting?"
-        )
-
-    if "sql" in [s.lower() for s in skills]:
-        questions.append(
-          "Explain JOINs in SQL."
-        )
-
-    if "pandas" in [s.lower() for s in skills]:
-        questions.append(
-          "Difference between loc and iloc?"
-        )
-
-    for q in questions:
-
-      st.write("•", q)    
-
-    pdf_file = "report.pdf"
-
-    c = canvas.Canvas(pdf_file)
-
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(150, 800, "AI Resume Screening Report")
-
-    c.setFont("Helvetica", 12)
-
-    c.drawString(50, 760, f"Resume Name: {resume.name}")
-    c.drawString(50, 735, f"ATS Match Score: {score}%")
-
-    c.drawString(50, 705, "Detected Skills:")
-    y = 685
-
-    for skill in skills:
-        c.drawString(70, y, f"• {skill.title()}")
         y -= 18
 
-    c.drawString(50, y-10, "Missing Skills:")
-    y -= 30
+
+y -= 20
+
+c.setFont("Helvetica-Bold",13)
+
+c.drawString(
+    50,
+    y,
+    "Resume Suggestions"
+)
+
+y -= 25
+
+c.setFont("Helvetica",11)
+
+if len(suggestions)==0:
 
     c.drawString(
-      50,
-      y,
-      f"Education: {len(sections['Education'])}"
+        70,
+        y,
+        "Resume looks excellent."
     )
 
-    y -= 20
-
-    c.drawString(
-      50,
-      y,
-      f"Experience: {len(sections['Experience'])}"
-    )
-
-    y -= 20
-
-    c.drawString(
-      50,
-      y,
-      f"Projects: {len(sections['Projects'])}"
-    )
-
-    y -= 20
-
-    c.drawString(
-      50,
-      y,
-      f"Certifications: {len(sections['Certifications'])}"
-    )
-
-    y -= 30
-    
-    
-
-    if score >= 85:
-        recommendation = "Excellent Candidate"
-
-    elif score >= 70:
-        recommendation = "Strong Candidate"
-
-    elif score >= 50:
-        recommendation = "Average Candidate"
-
-    else:
-        recommendation = "Not Recommended"
-
-    c.drawString(50, y, f"Recommendation: {recommendation}")
-    
-    y -= 30
-
-    c.drawString(
-       50,
-       y,
-      "Suggestions"
-    )
-
-    y -= 20
+else:
 
     for item in suggestions:
 
         c.drawString(
-          70,
-          y,
-          f"- {item}"
+            70,
+            y,
+            f"- {item}"
         )
 
-    y -= 20
-    c.save()
+        y -= 18
 
-    with open(pdf_file, "rb") as f:
-       st.download_button(
-           "📄 Download PDF Report",
-           f,
-           file_name="Resume_Report.pdf",
-           mime="application/pdf"
-        )
+y -= 25
+
+c.setFont("Helvetica-Bold",13)
+
+c.drawString(
+    50,
+    y,
+    "Recruiter Decision"
+)
+
+y -= 25
+
+c.setFont("Helvetica",12)
+
+if score>=85:
+
+    decision="Highly Recommended"
+
+elif score>=70:
+
+    decision="Recommended"
+
+else:
+
+    decision="Not Recommended"
+
+c.drawString(
+    70,
+    y,
+    decision
+)
+
+c.save()
+
+with open(pdf_file,"rb") as f:
+
+    st.download_button(
+        "📥 Download PDF Report",
+        f,
+        file_name="Resume_Report.pdf"
+    )
+
+# ------------------------------------------
+# Final Dashboard
+# ------------------------------------------
+
+st.divider()
+
+st.subheader("📊 Final Dashboard")
+
+col1,col2,col3,col4=st.columns(4)
+
+col1.metric(
+    "ATS Score",
+    f"{score}%"
+)
+
+col2.metric(
+    "Skills",
+    len(skills)
+)
+
+col3.metric(
+    "Missing",
+    len(missing_skills)
+)
+
+col4.metric(
+    "Projects",
+    len(sections["Projects"])
+)
+
+st.success("✅ Resume Screening Completed Successfully!")
+
+st.balloons()
+
+st.divider()
+
+st.caption(
+    "Built with ❤️ using Python, Streamlit, Scikit-Learn, Google Gemini AI, Pandas, Matplotlib & ReportLab"
+)    
