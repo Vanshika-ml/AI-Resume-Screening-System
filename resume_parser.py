@@ -1,113 +1,219 @@
 import pdfplumber
 import re
 
+
+# -----------------------------
+# Extract Resume Text
+# -----------------------------
+
 def extract_text(pdf_file):
+
     text = ""
+
     with pdfplumber.open(pdf_file) as pdf:
+
         for page in pdf.pages:
-            text += page.extract_text() or ""
+
+            page_text = page.extract_text()
+
+            if page_text:
+
+                text += page_text + "\n"
+
     return text
+
+
+# -----------------------------
+# Extract Contact Details
+# -----------------------------
 
 def extract_details(text):
 
-    details = {}
+    email = "Not Found"
+    phone = "Not Found"
+    github = "Not Found"
+    linkedin = "Not Found"
 
-    email = re.findall(
+    email_match = re.search(
         r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
         text
     )
 
-    phone = re.findall(
-        r"\+?\d[\d\s-]{8,}\d",
+    if email_match:
+
+        email = email_match.group()
+
+    phone_match = re.search(
+        r"(\+91[- ]?)?[6-9]\d{9}",
         text
     )
 
-    github = re.findall(
+    if phone_match:
+
+        phone = phone_match.group()
+
+    github_match = re.search(
         r"github\.com/[A-Za-z0-9_.-]+",
         text,
         re.IGNORECASE
     )
 
-    linkedin = re.findall(
+    if github_match:
+
+        github = github_match.group()
+
+    linkedin_match = re.search(
         r"linkedin\.com/in/[A-Za-z0-9_-]+",
         text,
         re.IGNORECASE
     )
 
-    details["Email"] = email[0] if email else "Not Found"
-    details["Phone"] = phone[0] if phone else "Not Found"
-    details["GitHub"] = github[0] if github else "Not Found"
-    details["LinkedIn"] = linkedin[0] if linkedin else "Not Found"
+    if linkedin_match:
 
-    return details
+        linkedin = linkedin_match.group()
+
+    return {
+
+        "Email": email,
+
+        "Phone": phone,
+
+        "GitHub": github,
+
+        "LinkedIn": linkedin
+
+    }
+
+
+# -----------------------------
+# Resume Sections
+# -----------------------------
 
 def extract_sections(text):
 
-    text = text.lower()
+    text_lower = text.lower()
 
-    education = []
+    sections = {
 
-    experience = []
+        "Education": [],
 
-    certifications = []
+        "Experience": [],
 
-    projects = []
+        "Projects": [],
 
-    education_keywords = [
-        "b.tech",
-        "bachelor",
-        "master",
-        "m.tech",
-        "b.e",
-        "degree",
-        "university",
-        "college"
-    ]
+        "Certifications": []
 
-    experience_keywords = [
-        "intern",
-        "experience",
-        "worked",
-        "company",
-        "employment"
-    ]
+    }
 
-    certification_keywords = [
-        "certificate",
-        "certification",
-        "coursera",
-        "udemy",
-        "microsoft",
-        "google"
-    ]
+    lines = text.split("\n")
 
-    project_keywords = [
-        "project",
-        "developed",
-        "implemented",
-        "built",
-        "created"
-    ]
+    current = None
 
-    for word in education_keywords:
-        if word in text:
-            education.append(word)
+    for line in lines:
 
-    for word in experience_keywords:
-        if word in text:
-            experience.append(word)
+        l = line.strip()
 
-    for word in certification_keywords:
-        if word in text:
-            certifications.append(word)
+        low = l.lower()
 
-    for word in project_keywords:
-        if word in text:
-            projects.append(word)
+        if "education" in low:
+
+            current = "Education"
+
+            continue
+
+        elif "experience" in low:
+
+            current = "Experience"
+
+            continue
+
+        elif "project" in low:
+
+            current = "Projects"
+
+            continue
+
+        elif "certification" in low or "certificate" in low:
+
+            current = "Certifications"
+
+            continue
+
+        if current and l != "":
+
+            sections[current].append(l)
+
+    return sections
+
+
+# -----------------------------
+# Resume Statistics
+# -----------------------------
+
+def get_resume_statistics(text):
+
+    words = len(text.split())
+
+    characters = len(text)
+
+    sentences = len(re.findall(r"[.!?]", text))
 
     return {
-        "Education": education,
-        "Experience": experience,
-        "Certifications": certifications,
-        "Projects": projects
+
+        "Words": words,
+
+        "Characters": characters,
+
+        "Sentences": sentences
+
     }
+
+
+# -----------------------------
+# Resume Completion Score
+# -----------------------------
+
+def completion_score(sections):
+
+    score = 0
+
+    if len(sections["Education"]) > 0:
+
+        score += 25
+
+    if len(sections["Experience"]) > 0:
+
+        score += 25
+
+    if len(sections["Projects"]) > 0:
+
+        score += 25
+
+    if len(sections["Certifications"]) > 0:
+
+        score += 25
+
+    return score
+
+
+# -----------------------------
+# Resume Strength
+# -----------------------------
+
+def resume_strength(score):
+
+    if score >= 90:
+
+        return "Excellent"
+
+    elif score >= 75:
+
+        return "Strong"
+
+    elif score >= 60:
+
+        return "Average"
+
+    else:
+
+        return "Needs Improvement"
