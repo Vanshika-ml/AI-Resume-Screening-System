@@ -1,5 +1,9 @@
+google-generativeai
 streamlit
-pdfplumber
-scikit-learn
 pandas
 numpy
+scikit-learn
+matplotlib
+reportlab
+PyPDF2
+pdfplumber
