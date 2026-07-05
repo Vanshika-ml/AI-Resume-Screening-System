@@ -1,9 +1,8 @@
 google-generativeai
 streamlit
 pandas
-numpy
 scikit-learn
 matplotlib
 reportlab
-PyPDF2
 pdfplumber
+sentence-transformers

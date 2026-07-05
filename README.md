@@ -1,191 +1,89 @@
 # 🤖 AI Resume Screening System
 
-An AI-powered Resume Screening System that analyzes resumes against a Job Description (JD), calculates an ATS match score, ranks candidates, detects missing skills, generates AI-powered feedback using Google Gemini, and creates a downloadable PDF report.
+An AI-powered Resume Screening Application built using Python, NLP, Sentence-Transformers, and Google Gemini — designed to help recruiters (or job seekers checking their own resume) instantly evaluate and rank resumes against a job description.
 
----
+## ✨ Features
 
-## 🚀 Live Demo
+- 📄 **Multi-Resume Upload** — screen and rank multiple PDF resumes against one job description at once
+- 🧠 **Semantic Match Scoring** — uses Sentence-Transformers embeddings (not just keyword overlap) to understand _meaning_, so phrasing differences between a resume and JD don't unfairly hurt the score
+- 🛠 **Skill Extraction** — detects 70+ technical and soft skills across programming, ML/AI, web dev, databases, cloud/DevOps, and BI tools, including common aliases (e.g. "ML" = "Machine Learning", "React.js" = "React")
+- 🏆 **Candidate Ranking** — automatically ranks all uploaded resumes and highlights the best match
+- 🤖 **AI Resume Feedback (Gemini)** — strengths, weaknesses, missing skills, resume improvement tips, recruiter decision, and interview questions — generated in a single efficient API call
+- 📊 **Visual Dashboard** — ATS score breakdown, resume completion meter, skill distribution chart
+- 📥 **PDF Report Export** — download a clean summary report for any screened candidate
+- 🌑 **Dark Theme UI**
 
-🔗 Streamlit App:https://ai-resume-screening-system-ib7xjctmnncgitthrbexd4.streamlit.app/
+## 🧩 How Scoring Works
 
----
+1. **Semantic similarity** (Sentence-Transformers, `all-MiniLM-L6-v2`) compares the resume and job description at the meaning level, not just word-for-word — falls back automatically to TF-IDF cosine similarity if the model is unavailable.
+2. **Skill overlap** is calculated separately using a 70+ skill taxonomy, showing exactly which required skills are present or missing.
+3. **Gemini AI** provides a qualitative second opinion — strengths, weaknesses, and a recruiter-style shortlist/reject decision.
 
-## 📂 GitHub Repository
+## 🖼 Screenshots
 
-🔗 https://github.com/Vanshika-ml/AI-Resume-Screening-System
+### Home
 
----
+![Home](screenshots/home.png)
 
-# ✨ Features
+### Candidate Ranking
 
-✅ Upload Multiple PDF Resumes
+![Candidate Ranking](screenshots/candidate_ranking.png)
 
-✅ Candidate Ranking
+### Resume Feedback
 
-✅ ATS Match Score
+![Resume Feedback](screenshots/resume_feedback.png)
 
-✅ Resume Parsing
+### Resume Statistics
 
-✅ Email Extraction
+![Resume Statistics](screenshots/resume_statstics.png)
 
-✅ Phone Number Extraction
+### PDF Report
 
-✅ GitHub Profile Detection
+![PDF Report](screenshots/pdf_report.png)
 
-✅ LinkedIn Profile Detection
-
-✅ Education Detection
-
-✅ Experience Detection
-
-✅ Project Detection
-
-✅ Certification Detection
-
-✅ Skill Extraction
-
-✅ Missing Skill Detection
-
-✅ Resume Completion Score
-
-✅ Resume Strength Analysis
-
-✅ AI Resume Feedback (Google Gemini)
-
-✅ AI Interview Questions
-
-✅ Recruiter Decision
-
-✅ Professional PDF Report
-
-✅ Resume Statistics Dashboard
-
----
-
-# 🧠 Tech Stack
+## 🛠 Technologies Used
 
 - Python
 - Streamlit
+- Sentence-Transformers
 - Scikit-Learn
 - Google Gemini API
+- PDFPlumber
 - Pandas
 - Matplotlib
-- PDFPlumber
 - ReportLab
-- NumPy
 
----
-
-# 📊 Workflow
-
-1. Upload Resume(s)
-2. Paste Job Description
-3. Resume Parsing
-4. Skill Extraction
-5. ATS Score Calculation
-6. Candidate Ranking
-7. Missing Skill Detection
-8. AI Resume Feedback
-9. Recruiter Decision
-10. Generate PDF Report
-
----
-
-# 📸 Screenshots
-
-## Home
-
-![home](sceenshots/home.png)
-
----
-
-## Candidate Ranking
-
-![ranking](sceenshots/candidate_ranking.png)
-
----
-
-## Resume Analysis
-
-![analysis](sceenshots/candidate_statstics.png)
-
----
-
-## AI Feedback
-
-![feedback](sceenshots/resume_feedback.png)
-
----
-
-## PDF Report
-
-![report](sceenshots/pdf_report.png)
-
----
-
-# 📁 Project Structure
-
-```
-AI_Resume_Screener/
-
-│── app.py
-
-│── resume_parser.py
-
-│── ranking.py
-
-│── skill_extractor.py
-
-│── requirements.txt
-
-│── README.md
-
-│── .gitignore
-
-│── reports/
-
-│── .streamlit/
-```
-
----
-
-# ⚙️ Installation
+## 🚀 Installation
 
 ```bash
-git clone https://github.com/Vanshika-ml/AI-Resume-Screening-System.git
-
-cd AI_Resume_Screener
-
 pip install -r requirements.txt
-
 streamlit run app.py
 ```
 
----
+You'll also need a Gemini API key set in `.streamlit/secrets.toml`
 
-# 📈 Future Improvements
+## 📁 Project Structure
 
-- OCR Support
-- DOCX Resume Support
-- Resume Comparison
-- AI Resume Rewriting
-- Resume Score History
-- Admin Dashboard
-- Authentication
-- Database Integration
+```
+AI_Resume_Screener/
+├── .streamlit/
+│   ├── config.toml         # Streamlit app theme/config
+│   └── secrets.toml         # Gemini API key (not committed — see .gitignore)
+├── screenshots/
+│   ├── home.png
+│   ├── candidate_ranking.png
+│   ├── resume_feedback.png
+│   ├── resume_statstics.png
+│   └── pdf_report.png
+├── app.py                   # Main Streamlit application
+├── resume_parser.py          # PDF text extraction, contact details, section parsing
+├── skill_extractor.py        # Skill taxonomy + detection
+├── ranking.py                 # Semantic (+ TF-IDF fallback) match scoring
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
 
----
+## 👤 Author
 
-# 👩‍💻 Author
-
-**Vanshika Varshney**
-
-GitHub:
-https://github.com/Vanshika-ml
-
-LinkedIn:
-https://www.linkedin.com/in/vanshika-varshney-590193380?utm_source=share_via&utm_content=profile&utm_medium=member_android
-
----
-
-## ⭐ If you like this project, don't forget to star the repository!
+Vanshika Varshney

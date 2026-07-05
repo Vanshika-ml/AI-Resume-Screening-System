@@ -3,23 +3,21 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.Python
 
-# Virtual Environment
+# Virtual environments
 venv/
 env/
+.venv/
 
-# Streamlit Secrets
+# Streamlit secrets (NEVER commit API keys)
 .streamlit/secrets.toml
 
-# Reports
-reports/
-*.pdf
+# Generated at runtime — no need to version-control
+Resume_Report.pdf
+report.pdf
 
-# Models
-*.pkl
-
-# VS Code
-.vscode/
-
-# macOS
+# OS / editor junk
 .DS_Store
+.vscode/
+*.swp
