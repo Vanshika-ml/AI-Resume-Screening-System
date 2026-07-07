@@ -23,9 +23,14 @@ def extract_details(text):
     github = "Not Found"
     linkedin = "Not Found"
 
+    # TLD is matched against a whitelist (instead of a bare [A-Za-z]{2,})
+    # so that words glued onto the email by PDF text extraction (e.g.
+    # "test@test.comPhone:...") don't get swallowed into the match.
     email_match = re.search(
-        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
-        text
+        r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\."
+        r"(?:com|in|org|net|edu|co|io|ai|gov|info|biz|me|dev)\b",
+        text,
+        re.IGNORECASE
     )
     if email_match:
         email = email_match.group()
@@ -124,13 +129,17 @@ def _match_heading(line_lower):
     if len(line_lower) > 40:
         return None
 
+    # A heading line should BE the heading (optionally with a trailing
+    # colon), not just start with the word — otherwise short bullets
+    # like "Project: Churn model in Python" under Experience get
+    # mistaken for a new "Projects" section header.
     for canonical, synonyms in SECTION_SYNONYMS.items():
         for syn in synonyms:
-            if line_lower == syn or line_lower.startswith(syn):
+            if line_lower == syn or line_lower.rstrip(":").strip() == syn:
                 return canonical
 
     for other in KNOWN_OTHER_HEADINGS:
-        if line_lower == other or line_lower.startswith(other):
+        if line_lower == other or line_lower.rstrip(":").strip() == other:
             return "__OTHER__"
 
     return None
