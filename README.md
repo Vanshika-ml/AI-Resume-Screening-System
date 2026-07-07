@@ -1,89 +1,60 @@
-# 🤖 AI Resume Screening System
+# AI Resume Screening System
 
-An AI-powered Resume Screening Application built using Python, NLP, Sentence-Transformers, and Google Gemini — designed to help recruiters (or job seekers checking their own resume) instantly evaluate and rank resumes against a job description.
+A resume screening tool built with Python, NLP, and Streamlit. Upload resumes, paste a job description, and get a match score, skill-gap analysis, and AI-generated feedback.
 
-## ✨ Features
+Built as a learning project to practice applied NLP and GenAI integration — not a production ATS replacement.
 
-- 📄 **Multi-Resume Upload** — screen and rank multiple PDF resumes against one job description at once
-- 🧠 **Semantic Match Scoring** — uses Sentence-Transformers embeddings (not just keyword overlap) to understand _meaning_, so phrasing differences between a resume and JD don't unfairly hurt the score
-- 🛠 **Skill Extraction** — detects 70+ technical and soft skills across programming, ML/AI, web dev, databases, cloud/DevOps, and BI tools, including common aliases (e.g. "ML" = "Machine Learning", "React.js" = "React")
-- 🏆 **Candidate Ranking** — automatically ranks all uploaded resumes and highlights the best match
-- 🤖 **AI Resume Feedback (Gemini)** — strengths, weaknesses, missing skills, resume improvement tips, recruiter decision, and interview questions — generated in a single efficient API call
-- 📊 **Visual Dashboard** — ATS score breakdown, resume completion meter, skill distribution chart
-- 📥 **PDF Report Export** — download a clean summary report for any screened candidate
-- 🌑 **Dark Theme UI**
+## Features
 
-## 🧩 How Scoring Works
+- Upload multiple resumes, ranks them against one job description
+- Match score using sentence embeddings (semantic similarity), with a TF-IDF fallback if the embedding model isn't available
+- Skill extraction from a ~65-skill list with common alias matching (e.g. "ML" → "machine learning")
+- Extracts contact info and resume sections (Education, Experience, Projects, Certifications)
+- AI feedback and interview questions generated via Gemini API
+- Downloadable PDF report
 
-1. **Semantic similarity** (Sentence-Transformers, `all-MiniLM-L6-v2`) compares the resume and job description at the meaning level, not just word-for-word — falls back automatically to TF-IDF cosine similarity if the model is unavailable.
-2. **Skill overlap** is calculated separately using a 70+ skill taxonomy, showing exactly which required skills are present or missing.
-3. **Gemini AI** provides a qualitative second opinion — strengths, weaknesses, and a recruiter-style shortlist/reject decision.
+## Why Semantic Matching Instead of Just TF-IDF
 
-## 🖼 Screenshots
+The first version only used TF-IDF, which is pure keyword overlap — "built ML models" wouldn't match a JD asking for "machine learning experience" unless the exact words lined up. Switching to sentence embeddings fixes that, since it compares meaning instead of exact words.
 
-### Home
+TF-IDF is kept as a fallback in case the embedding model fails to load, so the app degrades instead of crashing.
 
-![Home](screenshots/home.png)
+Ran a small comparison (`evaluate.py`) on a handful of labeled resume/JD pairs to check semantic scoring actually does better than TF-IDF, instead of just assuming it. It's a small sample, not a rigorous benchmark, but it's a starting point.
 
-### Candidate Ranking
+## Tech Stack
 
-![Candidate Ranking](screenshots/candidate_ranking.png)
+Python, Streamlit, Sentence-Transformers, Scikit-Learn, Google Gemini API, PDFPlumber, Matplotlib, ReportLab
 
-### Resume Feedback
-
-![Resume Feedback](screenshots/resume_feedback.png)
-
-### Resume Statistics
-
-![Resume Statistics](screenshots/resume_statstics.png)
-
-### PDF Report
-
-![PDF Report](screenshots/pdf_report.png)
-
-## 🛠 Technologies Used
-
-- Python
-- Streamlit
-- Sentence-Transformers
-- Scikit-Learn
-- Google Gemini API
-- PDFPlumber
-- Pandas
-- Matplotlib
-- ReportLab
-
-## 🚀 Installation
+## Installation
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-You'll also need a Gemini API key set in `.streamlit/secrets.toml`
+Add your Gemini API key to `.streamlit/secrets.toml`:
 
-## 📁 Project Structure
+## Testing
 
-```
-AI_Resume_Screener/
-├── .streamlit/
-│   ├── config.toml         # Streamlit app theme/config
-│   └── secrets.toml         # Gemini API key (not committed — see .gitignore)
-├── screenshots/
-│   ├── home.png
-│   ├── candidate_ranking.png
-│   ├── resume_feedback.png
-│   ├── resume_statstics.png
-│   └── pdf_report.png
-├── app.py                   # Main Streamlit application
-├── resume_parser.py          # PDF text extraction, contact details, section parsing
-├── skill_extractor.py        # Skill taxonomy + detection
-├── ranking.py                 # Semantic (+ TF-IDF fallback) match scoring
-├── requirements.txt
-├── .gitignore
-└── README.md
+Basic unit tests for skill extraction and ranking:
+
+```bash
+pytest -v
 ```
 
-## 👤 Author
+## Known Limitations
+
+- Skill list is hand-maintained — new tools won't be detected until added manually
+- Assumes a mostly single-column resume layout; multi-column PDFs can confuse section detection
+- Soft-skill detection is keyword-based, so it won't infer things like "led a team of 5" as leadership
+
+## Screenshots
+
+![Dashboard](screenshots/dashboard1.png)
+![Analysis](screenshots/dashboard2.png)
+![Ranking](screenshots/dashboard3.png)
+![PDF Report](screenshots/dashboard4.png)
+
+## Author
 
 Vanshika Varshney
